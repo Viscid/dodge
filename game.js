@@ -4,8 +4,8 @@ $(document).ready(function() {
   var canvas = {
     id: 'canvas',
     size: {
-      width: 640,
-      height: 480
+      width: 700,
+      height: 700
     },
     color: 'white',
     draw: function() {
@@ -15,9 +15,9 @@ $(document).ready(function() {
     }
   };
 
-  var Block = function(canvas) {
+  var Block = function(canvas, location) {
     this.genID = function() {
-      return 'Block' + Math.round(new Date().getTime() + (Math.random() * 100));
+      return 'Block' + Math.round(new Date().getTime() + (Math.random() * 10000000));
     }
     this.canvas = canvas;
     this.id = this.genID();
@@ -26,10 +26,10 @@ $(document).ready(function() {
       width: 10,
       height: 10
     };
-    this.color = 'black';
+    this.color = 'green';
     this.loc = {
-      x: 400,
-      y: 100
+      x: location.x,
+      y: location.y
     };
 
     this.create = function() {
@@ -39,6 +39,7 @@ $(document).ready(function() {
         height: this.size.height,
         width: this.size.width,
       });
+
       return element;
     };
 
@@ -50,51 +51,65 @@ $(document).ready(function() {
       $('#' + this.id).css('left', this.loc.x);
     };
 
-    return this;
+    this.move = function(destination, length) {
+      var startTime = $.now();
+      var endTime = startTime + length;
+      var currTime;
+
+      var thisBlock = this;
+
+      var startLoc = {
+        x: thisBlock.loc.x,
+        y: thisBlock.loc.y
+      };
+
+      function calcDistance() {
+        var a = thisBlock.loc.x - destination.x;
+        var b = thisBlock.loc.y - destination.y;
+        return Math.sqrt(a * a + b * b);
+      }
+
+      var interval = setInterval(function (){
+        if (calcDistance() > 1) {
+          currTime = $.now() - startTime;
+          if (currTime <= length) {
+              thisBlock.loc.x = startLoc.x + ((destination.x - startLoc.x) * (currTime / length));
+              thisBlock.loc.y = startLoc.y + ((destination.y - startLoc.y) * (currTime / length));
+          } else {
+            thisBlock.loc.x = destination.x;
+            thisBlock.loc.y = destination.y;
+          }
+          thisBlock.draw();
+        } else {
+          clearInterval(interval);
+        }
+      }, 10);
+    }
+
+    this.draw();
 
   };
 
-  function move_block(block, destination, length) {
-
-    var startTime = $.now();
-    var endTime = startTime + length;
-    var currTime = $.now() - startTime;
-
-    var currLoc = {
-      x: block.loc.x,
-      y: block.loc.y
+  function randomLocation(canvas) {
+    var randomX = Math.random() * canvas.size.width;
+    var randomY = Math.random() * canvas.size.height;
+    return {
+      x: randomX,
+      y: randomY
     };
-    var startLoc = {
-      x: block.loc.x,
-      y: block.loc.y
-    };
-
-    function reDraw() {
-      if ((currLoc.x < destination.x) ||
-        (currLoc.y < destination.y)) {
-        currTime = $.now() - startTime;
-        if (currTime <= length) {
-          debugger;
-          block.loc.x = startLoc.x + (destination.y * (currTime / length));
-          block.loc.y = startLoc.y + (destination.y * (currTime / length));
-        } else {
-          block.loc.x = destination.x;
-          block.loc.y = destination.y;
-        }
-        currLoc.x = block.loc.x;
-        currLoc.y = block.loc.y;
-        block.draw();
-      }
-    }
-
-    setInterval(reDraw, 10);
-
-
   }
 
 
-  var new_block = new Block(canvas);
-  var new_block2 = new Block(canvas);
-  move_block(new_block, {x: 200, y: 200}, 5000);
-  move_block(new_block2, {x: 300, y: 300}, 2000);
+
+var blocks = [];
+
+for (var i = 0; i < 200; i++) {
+  blocks.push(new Block(canvas, randomLocation(canvas) ));
+}
+
+blocks.forEach( function(block) {
+  var randomLoc = randomLocation(canvas);
+  block.move(randomLoc, Math.random() * 100000);
+});
+
 });
